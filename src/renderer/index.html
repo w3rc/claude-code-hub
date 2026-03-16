@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Claude Code Hub</title>
+  <link rel="stylesheet" href="../../node_modules/@xterm/xterm/css/xterm.css">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="toolbar">
+    <div class="toolbar-left">
+      <span class="app-title">Claude Code Hub</span>
+      <span class="pane-count" id="pane-count"></span>
+      <span class="shortcut-hint">Ctrl+1-9 focus | Tab cycle | Ctrl+Enter zoom | Esc unzoom</span>
+    </div>
+    <div class="toolbar-right">
+      <div class="grid-controls">
+        <label>Cols <input type="number" id="grid-cols" min="1" max="6" value="3"></label>
+        <label>Rows <input type="number" id="grid-rows" min="1" max="6" value="2"></label>
+      </div>
+      <button class="toolbar-btn" id="btn-restart-all" title="Restart All Panes">&#x21BB;</button>
+      <button class="toolbar-btn" id="btn-add-pane" title="Add Pane">+</button>
+      <button class="toolbar-btn" id="btn-remove-pane" title="Remove Last Pane">&minus;</button>
+      <div class="window-controls">
+        <button class="win-btn" id="btn-minimize" title="Minimize">&#x2013;</button>
+        <button class="win-btn" id="btn-maximize" title="Maximize">&#x25A1;</button>
+        <button class="win-btn win-close" id="btn-close" title="Close">&#x2715;</button>
+      </div>
+    </div>
+  </div>
+  <div id="pane-grid"></div>
+  <div id="context-menu" class="context-menu hidden">
+    <div class="ctx-item" data-action="rename">Rename</div>
+    <div class="ctx-item" data-action="change-dir">Change Directory</div>
+    <div class="ctx-item" data-action="zoom">Toggle Zoom</div>
+    <div class="ctx-item" data-action="split">Split Pane</div>
+    <div class="ctx-separator"></div>
+    <div class="ctx-item" data-action="restart">Restart Claude</div>
+    <div class="ctx-item ctx-danger" data-action="close">Close Pane</div>
+  </div>
+  <script src="bundle.js"></script>
+</body>
+</html>

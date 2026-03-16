@@ -1,0 +1,3 @@
+node_modules/
+src/renderer/bundle.js
+config.json

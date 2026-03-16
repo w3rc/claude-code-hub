@@ -1,0 +1,23 @@
+{
+  "name": "claude-code-hub",
+  "version": "1.0.0",
+  "description": "Multi-pane terminal hub for Claude Code CLI",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "npm run build:renderer && electron .",
+    "build:renderer": "esbuild src/renderer/app.js --bundle --outfile=src/renderer/bundle.js --platform=browser --format=iife",
+    "rebuild": "electron-rebuild -f -w node-pty",
+    "postinstall": "electron-rebuild -f -w node-pty"
+  },
+  "dependencies": {
+    "node-pty": "^1.1.0",
+    "@xterm/xterm": "^6.0.0",
+    "@xterm/addon-fit": "^0.11.0",
+    "@xterm/addon-web-links": "^0.12.0"
+  },
+  "devDependencies": {
+    "electron": "^35.0.1",
+    "electron-rebuild": "^3.2.9",
+    "esbuild": "^0.25.0"
+  }
+}

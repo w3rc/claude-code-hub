@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="none">
+  <rect width="256" height="256" rx="32" fill="#000"/>
+  <rect x="16" y="48" width="108" height="80" rx="8" stroke="#6c63ff" stroke-width="4" fill="#111"/>
+  <rect x="132" y="48" width="108" height="80" rx="8" stroke="#6c63ff" stroke-width="4" fill="#111"/>
+  <rect x="16" y="136" width="108" height="80" rx="8" stroke="#6c63ff" stroke-width="4" fill="#111"/>
+  <rect x="132" y="136" width="108" height="80" rx="8" stroke="#6c63ff" stroke-width="4" fill="#111"/>
+  <text x="128" y="30" text-anchor="middle" font-family="monospace" font-size="18" font-weight="bold" fill="#6c63ff">Claude Hub</text>
+  <text x="42" y="92" font-family="monospace" font-size="16" fill="#2ecc71">$_</text>
+  <text x="158" y="92" font-family="monospace" font-size="16" fill="#2ecc71">$_</text>
+  <text x="42" y="180" font-family="monospace" font-size="16" fill="#2ecc71">$_</text>
+  <text x="158" y="180" font-family="monospace" font-size="16" fill="#2ecc71">$_</text>
+</svg>
