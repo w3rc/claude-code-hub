@@ -91,28 +91,33 @@ function spawnPty(paneId) {
     mainWindow.webContents.send('terminal-reset', paneId);
   }
 
-  const ptyProcess = pty.spawn(getShell(), ['-l', '-c', claudeCmd], {
-    name: 'xterm-256color',
-    cols: 80,
-    rows: 24,
-    cwd: dir,
-    env: { ...process.env, TERM: 'xterm-256color' }
-  });
+  // Small delay to let the renderer process the reset and refit before new data arrives
+  setTimeout(() => {
+    if (!config.panes.find(p => p.id === paneId)) return; // pane was removed
 
-  ptyProcess.onData((data) => {
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.send('terminal-data', paneId, data);
-    }
-  });
+    const ptyProcess = pty.spawn(getShell(), ['-l', '-c', claudeCmd], {
+      name: 'xterm-256color',
+      cols: 80,
+      rows: 24,
+      cwd: dir,
+      env: { ...process.env, TERM: 'xterm-256color' }
+    });
 
-  ptyProcess.onExit(({ exitCode }) => {
-    ptys.delete(paneId);
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.send('pane-exited', paneId, exitCode);
-    }
-  });
+    ptyProcess.onData((data) => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('terminal-data', paneId, data);
+      }
+    });
 
-  ptys.set(paneId, ptyProcess);
+    ptyProcess.onExit(({ exitCode }) => {
+      ptys.delete(paneId);
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('pane-exited', paneId, exitCode);
+      }
+    });
+
+    ptys.set(paneId, ptyProcess);
+  }, 150); // delay after terminal-reset
 }
 
 function killPty(paneId) {

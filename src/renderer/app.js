@@ -671,7 +671,18 @@ window.api.onPaneExited((paneId, exitCode) => {
 window.api.onTerminalReset((paneId) => {
   const terminal = terminals[paneId];
   if (terminal) {
+    terminal.clear();
     terminal.reset();
+    // Refit after reset so the new PTY gets correct dimensions
+    const fa = fitAddons[paneId];
+    if (fa) {
+      requestAnimationFrame(() => {
+        try {
+          fa.fit();
+          window.api.terminalResize(paneId, terminal.cols, terminal.rows);
+        } catch (e) { /* ignore */ }
+      });
+    }
   }
 });
 
