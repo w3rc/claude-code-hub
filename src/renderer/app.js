@@ -5,6 +5,7 @@ import { WebLinksAddon } from '@xterm/addon-web-links';
 const terminals = {};
 const fitAddons = {};
 const paneData = {}; // store pane metadata per id
+let allProjects = []; // populated from config on init
 const grid = document.getElementById('pane-grid');
 const paneCountEl = document.getElementById('pane-count');
 const colsInput = document.getElementById('grid-cols');
@@ -166,6 +167,90 @@ function startRename(paneId) {
     if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
     if (e.key === 'Escape') { input.value = currentLabel; input.blur(); }
   });
+}
+
+// ── Project Quick-Switch Dropdown ──
+
+function showProjectDropdown(paneId, paneEl) {
+  // Remove any existing dropdown
+  const existing = document.querySelector('.project-dropdown');
+  if (existing) existing.remove();
+
+  const currentDir = paneData[paneId]?.directory;
+  const settingsBtn = paneEl.querySelector('.pane-btn.settings');
+  const btnRect = settingsBtn.getBoundingClientRect();
+
+  const dropdown = document.createElement('div');
+  dropdown.className = 'project-dropdown';
+
+  allProjects.forEach(p => {
+    const item = document.createElement('div');
+    item.className = 'project-dropdown-item';
+    if (p.directory === currentDir) item.classList.add('active');
+    item.textContent = p.label;
+    item.title = p.directory;
+    item.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      dropdown.remove();
+      if (p.directory === currentDir) return;
+      const result = await window.api.switchDirectory(paneId, p.directory);
+      if (result) {
+        const label = paneEl.querySelector('.pane-label');
+        label.textContent = result.label;
+        label.title = result.directory;
+        paneData[paneId] = { directory: result.directory, label: result.label };
+        const overlay = paneEl.querySelector('.pane-overlay');
+        if (overlay) overlay.remove();
+        paneEl.querySelector('.pane-btn.restart').classList.remove('visible');
+      }
+    });
+    dropdown.appendChild(item);
+  });
+
+  // Separator + Browse option
+  const sep = document.createElement('div');
+  sep.className = 'project-dropdown-sep';
+  dropdown.appendChild(sep);
+
+  const browseItem = document.createElement('div');
+  browseItem.className = 'project-dropdown-item browse';
+  browseItem.textContent = 'Browse\u2026';
+  browseItem.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    dropdown.remove();
+    const result = await window.api.changeDirectory(paneId);
+    if (result) {
+      const label = paneEl.querySelector('.pane-label');
+      label.textContent = result.label;
+      label.title = result.directory;
+      paneData[paneId] = { directory: result.directory, label: result.label };
+      const overlay = paneEl.querySelector('.pane-overlay');
+      if (overlay) overlay.remove();
+      paneEl.querySelector('.pane-btn.restart').classList.remove('visible');
+    }
+  });
+  dropdown.appendChild(browseItem);
+
+  document.body.appendChild(dropdown);
+
+  // Position below the settings button
+  let left = btnRect.left;
+  let top = btnRect.bottom + 4;
+  // Adjust if offscreen
+  const dRect = dropdown.getBoundingClientRect();
+  if (left + dRect.width > window.innerWidth) left = window.innerWidth - dRect.width - 8;
+  if (top + dRect.height > window.innerHeight) top = btnRect.top - dRect.height - 4;
+  dropdown.style.left = `${left}px`;
+  dropdown.style.top = `${top}px`;
+
+  // Close on click outside
+  const closeDropdown = (ev) => {
+    if (!dropdown.contains(ev.target)) {
+      dropdown.remove();
+      document.removeEventListener('click', closeDropdown, true);
+    }
+  };
+  setTimeout(() => document.addEventListener('click', closeDropdown, true), 0);
 }
 
 // ── Context Menu ──
@@ -348,6 +433,7 @@ function createPaneElement(pane, index) {
       <span class="pane-id">#${pane.id}</span>
       <span class="pane-label" title="${pane.directory}">${pane.label}</span>
       ${shortcutKey ? `<span class="pane-shortcut">${shortcutKey}</span>` : ''}
+      <button class="pane-btn vscode" title="Open in VS Code">&lt;/&gt;</button>
       <button class="pane-btn zoom" title="Zoom (double-click header)">&#x26F6;</button>
       <button class="pane-btn settings" title="Change directory">&#9881;</button>
       <button class="pane-btn restart" title="Restart Claude">&#8635;</button>
@@ -378,21 +464,20 @@ function createPaneElement(pane, index) {
   // Setup drag-to-swap
   setupDrag(header, pane.id);
 
+  // VS Code button
+  el.querySelector('.pane-btn.vscode').addEventListener('click', (e) => {
+    e.stopPropagation();
+    const dir = paneData[pane.id]?.directory;
+    if (dir) window.api.openInVSCode(dir);
+  });
+
   // Zoom button
   el.querySelector('.pane-btn.zoom').addEventListener('click', () => toggleZoom(pane.id));
 
-  // Settings button
-  el.querySelector('.pane-btn.settings').addEventListener('click', async () => {
-    const result = await window.api.changeDirectory(pane.id);
-    if (result) {
-      const label = el.querySelector('.pane-label');
-      label.textContent = result.label;
-      label.title = result.directory;
-      paneData[pane.id] = { directory: result.directory, label: result.label };
-      const overlay = el.querySelector('.pane-overlay');
-      if (overlay) overlay.remove();
-      el.querySelector('.pane-btn.restart').classList.remove('visible');
-    }
+  // Settings button — project quick-switch dropdown
+  el.querySelector('.pane-btn.settings').addEventListener('click', (e) => {
+    e.stopPropagation();
+    showProjectDropdown(pane.id, el);
   });
 
   // Restart button
@@ -428,7 +513,9 @@ function initTerminal(pane, container) {
 
   const fitAddon = new FitAddon();
   terminal.loadAddon(fitAddon);
-  terminal.loadAddon(new WebLinksAddon());
+  terminal.loadAddon(new WebLinksAddon((_, url) => {
+    window.api.openExternal(url);
+  }));
 
   terminal.open(termContainer);
 
@@ -440,6 +527,25 @@ function initTerminal(pane, container) {
   // Intercept shortcuts
   terminal.attachCustomKeyEventHandler((e) => {
     if (e.type !== 'keydown') return true;
+
+    // Ctrl+Shift+C: copy selection to clipboard
+    if (e.ctrlKey && e.shiftKey && e.key === 'C') {
+      e.preventDefault();
+      const selection = terminal.getSelection();
+      if (selection) {
+        navigator.clipboard.writeText(selection);
+      }
+      return false;
+    }
+
+    // Ctrl+Shift+V: paste from clipboard
+    if (e.ctrlKey && e.shiftKey && e.key === 'V') {
+      e.preventDefault();
+      navigator.clipboard.readText().then(text => {
+        if (text) terminal.paste(text);
+      });
+      return false;
+    }
 
     // Ctrl+1-9: switch panes
     if (e.ctrlKey && !e.shiftKey && e.key >= '1' && e.key <= '9') {
@@ -562,6 +668,13 @@ window.api.onPaneExited((paneId, exitCode) => {
   showExitOverlay(paneId, exitCode);
 });
 
+window.api.onTerminalReset((paneId) => {
+  const terminal = terminals[paneId];
+  if (terminal) {
+    terminal.reset();
+  }
+});
+
 // ── Toolbar Controls ──
 
 document.getElementById('btn-restart-all').addEventListener('click', () => {
@@ -649,6 +762,7 @@ document.addEventListener('keydown', (e) => {
 
 async function init() {
   const config = await window.api.getConfig();
+  allProjects = config.panes.map(p => ({ directory: p.directory, label: p.label }));
   setGridLayout(config.columns || 3, config.rows || 2);
   updatePaneCount(config.panes.length);
 

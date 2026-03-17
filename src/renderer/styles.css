@@ -5,7 +5,7 @@
   --accent: #6c63ff;
   --accent-hover: #7f78ff;
   --text: #e0e0e0;
-  --text-muted: #666;
+  --text-muted: #999;
   --border: #1a1a1a;
   --danger: #e74c3c;
   --activity: #f39c12;
@@ -58,7 +58,6 @@ body {
 .shortcut-hint {
   font-size: 10px;
   color: var(--text-muted);
-  opacity: 0.6;
 }
 
 .grid-controls {
@@ -123,7 +122,7 @@ body {
   height: 28px;
   background: none;
   border: none;
-  color: var(--text-muted);
+  color: var(--text);
   font-size: 12px;
   cursor: pointer;
   display: flex;
@@ -257,21 +256,21 @@ body {
 
 .pane-shortcut {
   font-size: 9px;
-  color: var(--text-muted);
-  opacity: 0.5;
+  color: inherit;
+  opacity: 1;
   margin-right: 4px;
 }
 
 .pane-btn {
   background: none;
   border: none;
-  color: var(--text-muted);
+  color: inherit;
   cursor: pointer;
   font-size: 13px;
   padding: 2px 4px;
   border-radius: 3px;
   transition: all 0.15s;
-  opacity: 0.6;
+  opacity: 1;
 }
 
 .pane-btn:hover {
@@ -280,16 +279,23 @@ body {
   background: rgba(108, 99, 255, 0.1);
 }
 
+.pane-btn.vscode {
+  font-size: 10px;
+  font-weight: 700;
+  font-family: monospace;
+  line-height: 1;
+}
+
+.pane-btn.vscode:hover {
+  color: #007acc;
+  background: rgba(0, 122, 204, 0.1);
+}
+
 .pane-btn.zoom {
   font-size: 11px;
 }
 
-.pane-btn.restart {
-  opacity: 0;
-}
-
 .pane-btn.restart.visible {
-  opacity: 1;
   color: var(--danger);
 }
 
@@ -379,6 +385,56 @@ body {
 }
 
 .ctx-separator {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 0;
+}
+
+/* Project quick-switch dropdown */
+.project-dropdown {
+  position: fixed;
+  background: #111;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 0;
+  min-width: 200px;
+  max-height: 320px;
+  overflow-y: auto;
+  z-index: 1000;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+}
+
+.project-dropdown-item {
+  padding: 8px 16px;
+  font-size: 12px;
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.1s;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.project-dropdown-item:hover {
+  background: var(--accent);
+  color: white;
+}
+
+.project-dropdown-item.active {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.project-dropdown-item.active::before {
+  content: '\2022  ';
+}
+
+.project-dropdown-item.browse {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.project-dropdown-sep {
   height: 1px;
   background: var(--border);
   margin: 4px 0;

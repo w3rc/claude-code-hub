@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
@@ -86,6 +86,11 @@ function spawnPty(paneId) {
   const dir = fs.existsSync(pane.directory) ? pane.directory : os.homedir();
 
   const claudeCmd = path.join(os.homedir(), '.local', 'bin', 'claude') + ' --dangerously-skip-permissions --chrome';
+  // Signal renderer to clear the terminal before new process starts
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('terminal-reset', paneId);
+  }
+
   const ptyProcess = pty.spawn(getShell(), ['-l', '-c', claudeCmd], {
     name: 'xterm-256color',
     cols: 80,
@@ -132,6 +137,15 @@ function registerIPC() {
     else mainWindow?.maximize();
   });
   ipcMain.on('window-close', () => mainWindow?.close());
+
+  ipcMain.on('open-external', (_, url) => {
+    shell.openExternal(url);
+  });
+
+  ipcMain.on('open-in-vscode', (_, directory) => {
+    const { exec } = require('child_process');
+    exec(`code-insiders "${directory}"`);
+  });
 
   ipcMain.on('terminal-input', (_, paneId, data) => {
     const p = ptys.get(paneId);
@@ -215,6 +229,16 @@ function registerIPC() {
     }
 
     return { directory: newDir, label: pane?.label || path.basename(newDir) };
+  });
+
+  ipcMain.handle('switch-directory', async (_, paneId, directory) => {
+    const pane = config.panes.find(p => p.id === paneId);
+    if (!pane) return null;
+    pane.directory = directory;
+    pane.label = path.basename(directory);
+    saveConfig(config);
+    spawnPty(paneId);
+    return { directory, label: pane.label };
   });
 
   ipcMain.handle('add-pane', () => {

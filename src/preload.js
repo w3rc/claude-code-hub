@@ -13,6 +13,7 @@ contextBridge.exposeInMainWorld('api', {
   getConfig: () => ipcRenderer.invoke('get-config'),
   updateConfig: (partial) => ipcRenderer.invoke('update-config', partial),
   changeDirectory: (paneId) => ipcRenderer.invoke('change-directory', paneId),
+  switchDirectory: (paneId, directory) => ipcRenderer.invoke('switch-directory', paneId, directory),
   renamePane: (paneId, label) => ipcRenderer.invoke('rename-pane', paneId, label),
   swapPanes: (a, b) => ipcRenderer.invoke('swap-panes', a, b),
   addPane: () => ipcRenderer.invoke('add-pane'),
@@ -29,6 +30,11 @@ contextBridge.exposeInMainWorld('api', {
   },
   onPaneExited: (callback) => {
     ipcRenderer.on('pane-exited', (_, paneId, code) => callback(paneId, code));
+  },
+  openExternal: (url) => ipcRenderer.send('open-external', url),
+  openInVSCode: (directory) => ipcRenderer.send('open-in-vscode', directory),
+  onTerminalReset: (callback) => {
+    ipcRenderer.on('terminal-reset', (_, paneId) => callback(paneId));
   },
   removeAllListeners: (channel) => {
     ipcRenderer.removeAllListeners(channel);
